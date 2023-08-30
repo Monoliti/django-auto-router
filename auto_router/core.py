@@ -38,18 +38,34 @@ class AutoRouter:
         if self.DEBUG:
             print("Auto Router - " + message)
 
+    def _clean_app_name(self, app_name):
+        split = app_name.split(".")
+        end_index = len(split)
+
+        for index, element in enumerate(split):
+            if index == 0:
+                continue
+
+            if element == "apps":
+                end_index = index
+                break
+
+        return ".".join(split[0:end_index])
+
     def _load_all_modules(self):
         for module in settings.INSTALLED_APPS:
             try:
-                module = importlib.import_module(module + ".views")
+                module = importlib.import_module(self._clean_app_name(module) + ".views")
                 for attribute_name in dir(module):
                     attribute = getattr(module, attribute_name)
 
                     if isclass(attribute):
                         # Add the class to this package's variables
                         globals()[attribute_name] = attribute
-            except:
+            except ModuleNotFoundError:
                 pass
+            except Exception as e:
+                raise e
 
     @property
     def urls(self):
